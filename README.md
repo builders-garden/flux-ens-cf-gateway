@@ -9,7 +9,7 @@ The work is based on [this example](https://github.com/gskril/ens-offchain-regis
 Before running the gateway worker, couple of configuration needs to be done as following:
 
 1. Create a dev.vars in the root directory;
-2. Put gateway private key, supabase url and supabase key into it in between double quotes, as below:
+2. Put gateway private key, database url into it in between double quotes, as below:
 
 ```
 PRIVATE_KEY=""
@@ -26,3 +26,11 @@ yarn start
 ## Deployment on Cloudflare
 
 Make sure that all the configuration above has been done. Add the enviroment variables as Cloudflare secrets.
+
+You just need to run
+
+```
+yarn deploy
+```
+
+To use wrangler in order to deploy on Cloudflare.
