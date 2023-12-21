@@ -1,17 +1,18 @@
-import { createClient } from "@supabase/supabase-js";
+import { PrismaClient } from '@prisma/client/edge'
 import { Env } from "../env";
 
 export async function getNames(env: Env) {
   try {
-    const db = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY);
-    const { data: names } = await db.from("records").select("*");
+    const prisma = new PrismaClient()
 
-    if (!names) {
+    const records = await prisma.record.findMany()
+
+    if (!records) {
       return Response.json({}, { status: 200 });
     }
 
     // Simplify the response format
-    const formattedNames = names.reduce((acc, name) => {
+    const formattedNames = records.reduce((acc, name) => {
       return {
         ...acc,
         [name.name]: {

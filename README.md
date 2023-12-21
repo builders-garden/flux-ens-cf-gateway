@@ -1,6 +1,6 @@
-# ENS Offchain Resolver Gateway with Supabase - Cloudflare Worker
+# ENS Offchain Resolver Gateway with Prisma - Cloudflare Worker
 
-This package implements a simple CCIP-read gateway worker for ENS offchain resolution, using Supabase as the database for the names.
+This package implements a simple CCIP-read gateway worker for ENS offchain resolution, using Prisma as the database for the names.
 
 The work is based on [this example](https://github.com/gskril/ens-offchain-registrar/tree/main) from ENS.
 
@@ -13,8 +13,7 @@ Before running the gateway worker, couple of configuration needs to be done as f
 
 ```
 PRIVATE_KEY=""
-SUPABASE_SERVICE_KEY=""
-SUPABASE_URL=""
+DATABASE_URL=""
 ```
 
 3. Run the worker:

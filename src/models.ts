@@ -3,8 +3,8 @@ import z from "zod";
 export const ZodName = z.object({
   name: z.string().regex(/^[a-z0-9-.]+$/),
   owner: z.string(),
-  addresses: z.record(z.any()).optional(),
-  texts: z.record(z.any()).optional(),
+  addresses: z.any().optional(),
+  texts: z.any().optional(),
   contenthash: z.string().optional(),
 });
 

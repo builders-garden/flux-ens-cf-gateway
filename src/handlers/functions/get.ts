@@ -1,22 +1,15 @@
-import { createClient } from "@supabase/supabase-js";
+import { PrismaClient } from '@prisma/client/edge'
 import { Env } from "../../env";
 import { Name } from "../../models";
 
 export async function get(name: string, env: Env): Promise<Name | null> {
-  const supabaseClient = createClient(
-    env.SUPABASE_URL,
-    env.SUPABASE_SERVICE_KEY
-  );
+  const prisma = new PrismaClient()
 
-  const { data } = await supabaseClient
-    .from("records")
-    .select("*")
-    .eq("name", name)
-    .single();
+  const record = await prisma.record.findUnique({
+    where: {
+      name
+    }
+  })
 
-  if (!data) {
-    return null;
-  }
-
-  return data;
+  return record
 }
