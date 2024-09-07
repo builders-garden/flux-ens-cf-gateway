@@ -46,6 +46,9 @@ const queryHandlers: {
     const { contenthash, ttl } = await db.contenthash(name, env);
     return { result: [contenthash], ttl };
   },
+  "ABI(bytes32,uint256)": async (db, name, args, env) => {
+    return { result: [ 0, "0x" ], ttl: 1000 };
+  }
 };
 
 async function query(
@@ -71,7 +74,7 @@ async function query(
   }
 
   const { result, ttl } = await handler(db, name, args.slice(1), env);
-
+  console.log(signature, result)
   return {
     result: Resolver.encodeFunctionResult(signature, result),
     validUntil: Math.floor(Date.now() / 1000 + ttl),

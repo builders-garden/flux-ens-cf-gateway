@@ -22,7 +22,10 @@ export async function getName(request: IRequest, env: Env) {
     return new Response('Name not found', { status: 404 })
   }
 
-  return Response.json(nameData, {
+  return Response.json({
+    ...nameData,
+    contenthash: nameData.contenthash ? nameData.contenthash.replace('/index.html', '') : undefined,
+  }, {
     status: 200,
   })
 }

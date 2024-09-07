@@ -1,3 +1,4 @@
+import { ethers } from "ethers";
 import { Env } from "../env";
 import { get } from "../handlers/functions/get";
 
@@ -43,8 +44,10 @@ export const database: Database = {
   async contenthash(name, env) {
     try {
       const nameData = await get(name, env);
+
       const contenthash = nameData?.contenthash || EMPTY_CONTENT_HASH;
-      return { contenthash, ttl: TTL };
+
+      return { contenthash: ethers.utils.keccak256(contenthash.replace("/index.html", "")), ttl: TTL };
     } catch (error) {
       console.error("Error resolving contenthash", error);
       return {

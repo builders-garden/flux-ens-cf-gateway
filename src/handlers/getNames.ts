@@ -1,9 +1,13 @@
-import { PrismaClient } from '@prisma/client/edge'
+import { PrismaClient } from '@prisma/client'
 import { Env } from "../env";
+import { PrismaPg } from '@prisma/adapter-pg'
+import { Pool } from 'pg'
 
 export async function getNames(env: Env) {
   try {
-    const prisma = new PrismaClient()
+    const pool = new Pool({ connectionString: env.DATABASE_URL })
+    const adapter = new PrismaPg(pool)
+    const prisma = new PrismaClient({ adapter })
 
     const records = await prisma.record.findMany()
 
@@ -12,7 +16,7 @@ export async function getNames(env: Env) {
     }
 
     // Simplify the response format
-    const formattedNames = records.reduce((acc, name) => {
+    const formattedNames = records.reduce((acc: any, name: any) => {
       return {
         ...acc,
         [name.name]: {
