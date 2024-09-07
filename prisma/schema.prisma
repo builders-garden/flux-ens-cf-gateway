@@ -1,3 +1,9 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,137 +13,111 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Profile {
-  id               Int                 @id @default(autoincrement())
-  privyUserId      String?             @unique @map("privy_user_id")
-  address          String              @unique
-  username         String              @unique
-  displayName      String              @map("display_name")
-  avatarUrl        String              @map("avatar_url")
-  preferredToken   String              @map("preferred_token")
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @default(now())
-  credits          Balance[]           @relation("creditor")
-  debts            Balance[]           @relation("debtor")
-  createdExpenses  Expense[]           @relation("createdBy")
-  paidExpenses     Expense[]           @relation("paidBy")
-  groupsCreated    Group[]             @relation("creator")
-  sentInvite       Invite[]            @relation("inviter")
-  claimedInvite    Invite?             @relation("recipient")
-  chargedExpenses  ProfileHasExpense[] @relation("profileExpenses")
-  groups           ProfileHasGroup[]
-  receivedRequests Request[]           @relation("payee")
-  paidRequests     Request[]           @relation("payer")
-
-  @@index([privyUserId])
-  @@index([address])
+model User {
+  id                 String        @id @default(uuid())
+  fullName           String?
+  address            String        @unique
+  email              String        @unique
+  smartAccountAddress String? 
+  companyName        String?
+  companyUrl         String?
+  companyImage       String? 
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  products           Product[]
+  paymentLinks       PaymentLink[]
+  customers           Customer[]
+  transactions        Transaction[]
+  webhooks            Webhook[]
 }
 
-model Group {
-  id        Int               @id @default(autoincrement())
+model Product {
+  id               String        @id @default(uuid())
+  name             String
+  description      String
+  imageUrl         String
+  price            Decimal       @db.Decimal(10, 2)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  userId           String
+  user             User          @relation(fields: [userId], references: [id])
+  paymentLinks     PaymentLink[]
+  transactions     Transaction[]
+}
+
+model PaymentLink {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  redirectUrl String
+  requiresWorldId Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+}
+
+model Webhook {
+  id        String   @id @default(uuid())
   name      String
-  avatarUrl String            @map("avatar_url")
-  type      String
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @default(now())
-  creatorId Int               @map("creator_id")
-  balances  Balance[]
-  expenses  Expense[]
-  creator   Profile           @relation("creator", fields: [creatorId], references: [id])
-  members   ProfileHasGroup[]
-  requests  Request[]
-}
-
-model ProfileHasGroup {
-  profileId Int                       @map("profile_id")
-  groupId   Int                       @map("group_id")
-  status    ProfileHasGroupStatusType @default(INACTIVE)
-  createdAt DateTime                  @default(now())
-  updatedAt DateTime                  @default(now())
-  group     Group                     @relation(fields: [groupId], references: [id])
-  profile   Profile                   @relation(fields: [profileId], references: [id])
-
-  @@id([profileId, groupId])
-}
-
-model Expense {
-  id           Int                 @id @default(autoincrement())
-  groupId      Int?                @map("group_id")
-  description  String?
-  category     String?
-  amount       Float
-  createdById  Int                 @map("created_by_id")
-  paidById     Int                 @map("paid_by_id")
-  date         DateTime
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @default(now())
-  createdBy    Profile             @relation("createdBy", fields: [createdById], references: [id])
-  group        Group?              @relation(fields: [groupId], references: [id])
-  paidBy       Profile             @relation("paidBy", fields: [paidById], references: [id])
-  splitBetween ProfileHasExpense[]
-
-  @@index([groupId, category])
-  @@index([createdById])
-  @@index([paidById])
-}
-
-model ProfileHasExpense {
-  id        Int      @id @default(autoincrement())
-  profileId Int      @map("profile_id")
-  expenseId Int      @map("expense_id")
+  url       String
+  event     String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-  expense   Expense  @relation(fields: [expenseId], references: [id])
-  profile   Profile  @relation("profileExpenses", fields: [profileId], references: [id])
-
-  @@index([profileId, expenseId])
+  updatedAt DateTime @updatedAt
+  eventLogs WebhookEventLog[]
 }
 
-model Balance {
-  id         Int      @id @default(autoincrement())
-  groupId    Int      @map("group_id")
-  debtorId   Int      @map("debtor_id")
-  creditorId Int      @map("creditor_id")
-  amount     Float
+enum WebhookEventLogStatus {
+  SUCCESS
+  BAD_REQUEST
+  UNAUTHORIZED
+  NOT_FOUND
+  INTERNAL_SERVER_ERROR
+  TIMEOUT
+  UNKNOWN
+}
+
+model WebhookEventLog {
+  id        String   @id @default(uuid())
+  webhookId String
+  data      Json
+  response  Json?
+  status WebhookEventLogStatus
+  statusCode Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  webhook   Webhook  @relation(fields: [webhookId], references: [id])
+}
+
+model Transaction {
+  id         String   @id @default(uuid())
+  hash       String   @unique
+  amount     String  
+  timestamp  DateTime
   createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now())
-  creditor   Profile  @relation("creditor", fields: [creditorId], references: [id])
-  debtor     Profile  @relation("debtor", fields: [debtorId], references: [id])
-  group      Group    @relation(fields: [groupId], references: [id])
-
-  @@index([groupId])
+  updatedAt  DateTime @updatedAt
+  customerId String
+  productId String
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  customer   Customer @relation(fields: [customerId], references: [id])
+  product    Product  @relation(fields: [productId], references: [id])
 }
 
-model Request {
-  id        Int               @id @default(autoincrement())
-  groupId   Int?              @map("group_id")
-  payerId   Int               @map("payer_id")
-  payeeId   Int               @map("payee_id")
-  requestId String            @unique(map: "request_id")
-  amount    Float
-  status    RequestStatusType @default(PENDING)
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @default(now())
-  group     Group?            @relation(fields: [groupId], references: [id])
-  payee     Profile           @relation("payee", fields: [payeeId], references: [id])
-  payer     Profile           @relation("payer", fields: [payerId], references: [id])
-
-  @@index([payerId])
-  @@index([payeeId])
-}
-
-model Invite {
-  id          Int              @id @default(autoincrement())
-  recipientId Int?             @unique @map("recipient_id")
-  inviterId   Int              @map("inviter_id")
-  code        String
-  status      InviteStatusType @default(PENDING)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @default(now())
-  inviter     Profile          @relation("inviter", fields: [inviterId], references: [id])
-  recipient   Profile?         @relation("recipient", fields: [recipientId], references: [id])
-
-  @@index([inviterId])
+model Customer {
+  id           String        @id @default(uuid())
+  address      String        @unique
+  ens          String?       @unique
+  avatar       String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  userId       String
+  user         User          @relation(fields: [userId], references: [id])
+  transactions Transaction[]
 }
 
 model Record {
@@ -153,20 +133,4 @@ model Record {
   updatedAt       DateTime  @map("updated_at") @default(now())    
 
   @@index([owner])
-}
-
-enum ProfileHasGroupStatusType {
-  INACTIVE
-  ACTIVE
-}
-
-enum RequestStatusType {
-  PENDING
-  REJECTED
-  PAID
-}
-
-enum InviteStatusType {
-  PENDING
-  ACCEPTED
 }
